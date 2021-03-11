@@ -33,6 +33,11 @@ void ICACHE_RAM_ATTR ___GT911IRQ___()
 esp_err_t GT911::begin(uint8_t pin_sda, uint8_t pin_scl, uint8_t pin_int)
 {
     log_d("GT911: Initialization");
+
+    _pin_int = pin_int;
+    _sleeping = false;
+    pinMode(MY_TOUCH_INT_PIN, INPUT);
+
     pinMode(pin_int, INPUT); // Startup sequence PIN part
 
     Wire.setClock(400000);
@@ -63,6 +68,42 @@ esp_err_t GT911::begin(uint8_t pin_sda, uint8_t pin_scl, uint8_t pin_int)
     // }
 
     attachInterrupt(pin_int, ___GT911IRQ___, FALLING);
+
+    return ESP_OK;
+}
+
+esp_err_t GT911::sleep(bool enable)
+{
+    if(_pin_int == -1) return ESP_FAIL;
+
+    if((_sleeping == true) && (enable == true)) return ESP_OK;
+
+    if((_sleeping == false) && (enable == false)) return ESP_OK;
+
+    if(enable == true)
+    {
+        detachInterrupt(_pin_int);
+
+        pinMode(MY_TOUCH_INT_PIN, OUTPUT);
+        digitalWrite(MY_TOUCH_INT_PIN, LOW);
+        delay(100);
+        write(0x8040, 0x05);
+        log_d("GT911: sleep mode");
+        _sleeping = true;
+    }
+    else
+    {
+        pinMode(MY_TOUCH_INT_PIN, OUTPUT);
+        digitalWrite(MY_TOUCH_INT_PIN, LOW);
+        delay(100);
+        digitalWrite(MY_TOUCH_INT_PIN, HIGH);
+        delay(5);
+        pinMode(MY_TOUCH_INT_PIN, INPUT);
+
+        attachInterrupt(_pin_int, ___GT911IRQ___, FALLING);
+        log_d("GT911: normal mode");
+        _sleeping = false;
+    }
 
     return ESP_OK;
 }

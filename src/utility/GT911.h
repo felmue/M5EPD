@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 
+// Note: requires hardware modification
+#define MY_TOUCH_INT_PIN GPIO_NUM_19
+
 typedef struct
 {
     uint16_t x;
@@ -22,6 +25,7 @@ public:
 public:
     GT911();
     esp_err_t begin(uint8_t pin_sda, uint8_t pin_scl, uint8_t pin_int);
+    esp_err_t sleep(bool enable);
     bool avaliable();
     void update();
     void SetRotation(uint16_t rotate);
@@ -48,6 +52,8 @@ private:
     uint8_t _rotate = ROTATE_0;
     tp_finger_t _fingers[2];
     uint8_t _iic_addr = 0x14;
+    uint8_t _pin_int = -1;
+    bool _sleeping = false;
 };
 
 #endif
